@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - CORS_ORIGINS=http://localhost:8081,http://localhost:19006
+      - LOG_LEVEL=DEBUG
+      - ENVIRONMENT=development
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Firebase emulators (optional for local development)
+  # Uncomment if you want to run Firebase emulators locally
+  # firebase-emulators:
+  #   image: node:18
+  #   working_dir: /app
+  #   volumes:
+  #     - ./backend:/app
+  #   ports:
+  #     - "4000:4000"  # Emulator UI
+  #     - "9099:9099"  # Auth
+  #     - "8080:8080"  # Firestore
+  #     - "5001:5001"  # Functions
+  #   command: >
+  #     sh -c "npm install -g firebase-tools &&
+  #            firebase emulators:start --import=./emulator-data"
+
+networks:
+  default:
+    name: fluxflow-network

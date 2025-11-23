@@ -1,0 +1,49 @@
+name: FluxFlow CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    - run: npm ci
+      working-directory: ./backend/functions
+    - run: npm run build
+      working-directory: ./backend/functions
+    # - run: npm test
+    #   working-directory: ./backend/functions
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    - run: npm ci
+      working-directory: ./frontend
+    # - run: npm test
+    #   working-directory: ./frontend
+
+  ml-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - run: pip install -r requirements.txt
+      working-directory: ./ml-service
+    # - run: pytest
+    #   working-directory: ./ml-service
