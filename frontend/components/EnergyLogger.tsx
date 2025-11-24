@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { logEnergy } from '../services/energyService';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface EnergyLoggerProps {
     userId: string;
@@ -14,9 +13,9 @@ export default function EnergyLogger({ userId, onLogComplete }: EnergyLoggerProp
     const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
 
     const levels = [
-        { value: 1, label: 'Low', icon: 'battery-dead', color: ['#ef4444', '#b91c1c'] },
-        { value: 5, label: 'Medium', icon: 'battery-half', color: ['#f59e0b', '#b45309'] },
-        { value: 10, label: 'High', icon: 'battery-full', color: ['#10b981', '#059669'] },
+        { value: 1, label: 'Low', icon: 'battery-dead', color: '#ef4444' },
+        { value: 5, label: 'Medium', icon: 'battery-half', color: '#f59e0b' },
+        { value: 10, label: 'High', icon: 'battery-full', color: '#10b981' },
     ];
 
     const handleLog = async (level: number) => {
@@ -34,10 +33,10 @@ export default function EnergyLogger({ userId, onLogComplete }: EnergyLoggerProp
     };
 
     return (
-        <View className="bg-white/5 p-6 rounded-3xl mb-8 border border-white/10">
-            <Text className="text-white font-bold text-2xl mb-6">How's your energy?</Text>
+        <View className="bg-white/[0.02] p-5 rounded-2xl mb-6 border border-white/[0.05]">
+            <Text className="text-white/90 text-sm font-medium mb-4 tracking-wide uppercase">Energy Check</Text>
 
-            <View className="flex-row gap-3">
+            <View className="flex-row gap-2.5">
                 {levels.map((level) => (
                     <TouchableOpacity
                         key={level.value}
@@ -46,25 +45,27 @@ export default function EnergyLogger({ userId, onLogComplete }: EnergyLoggerProp
                         disabled={loading}
                         activeOpacity={0.7}
                     >
-                        <LinearGradient
-                            colors={selectedLevel === level.value ? level.color as any : ['#1f2937', '#111827']}
-                            className={`items-center py-6 px-4 rounded-2xl border-2 ${selectedLevel === level.value ? 'border-white/30' : 'border-white/10'}`}
+                        <View
+                            className={`items-center py-4 px-3 rounded-xl border ${selectedLevel === level.value
+                                    ? 'bg-white/[0.08] border-white/20'
+                                    : 'bg-white/[0.02] border-white/[0.05]'
+                                }`}
                         >
                             {loading && selectedLevel === level.value ? (
-                                <ActivityIndicator color="white" size="large" />
+                                <ActivityIndicator color={level.color} size="small" />
                             ) : (
                                 <>
                                     <Ionicons
                                         name={level.icon as any}
-                                        size={36}
-                                        color={selectedLevel === level.value ? 'white' : level.color[0]}
+                                        size={28}
+                                        color={level.color}
                                     />
-                                    <Text className={`mt-3 font-bold text-base ${selectedLevel === level.value ? 'text-white' : 'text-gray-400'}`}>
+                                    <Text className="mt-2 font-medium text-xs text-gray-400">
                                         {level.label}
                                     </Text>
                                 </>
                             )}
-                        </LinearGradient>
+                        </View>
                     </TouchableOpacity>
                 ))}
             </View>

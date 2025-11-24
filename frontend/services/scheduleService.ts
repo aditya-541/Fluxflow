@@ -113,3 +113,23 @@ export const generateSchedule = async (
         throw error;
     }
 };
+
+/**
+ * Get tasks reordered by ML-optimized schedule
+ */
+export const getOptimizedTaskOrder = async (
+    tasks: Task[],
+    currentEnergy: EnergyLog | null
+): Promise<{ tasks: Task[]; scheduledTasks: ScheduledTask[] }> => {
+    const scheduledTasks = await generateSchedule(tasks, currentEnergy, true);
+
+    // Create a map for quick lookup
+    const taskMap = new Map(tasks.map(t => [t.id, t]));
+
+    // Reorder tasks based on scheduled order
+    const orderedTasks = scheduledTasks
+        .map(st => taskMap.get(st.task_id))
+        .filter((t): t is Task => t !== undefined);
+
+    return { tasks: orderedTasks, scheduledTasks };
+};

@@ -1,24 +1,42 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/auth';
 import EnergyLogger from '../../components/EnergyLogger';
 import PomodoroTimer from '../../components/PomodoroTimer';
 import { getLatestEnergyLog, EnergyLog } from '../../services/energyService';
 import { subscribeToTasks, Task } from '../../services/taskService';
-import { LinearGradient } from 'expo-linear-gradient';
+import { getOptimizedTaskOrder } from '../../services/scheduleService';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function Dashboard() {
     const { user } = useAuth();
+    const router = useRouter();
     const [currentEnergy, setCurrentEnergy] = useState<EnergyLog | null>(null);
     const [nextTask, setNextTask] = useState<Task | null>(null);
+    const [optimizedTasks, setOptimizedTasks] = useState<Task[]>([]);
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchEnergy = async () => {
         if (user) {
             const log = await getLatestEnergyLog(user.uid);
             setCurrentEnergy(log);
+        }
+    };
+
+    const fetchOptimizedTasks = async (tasks: Task[]) => {
+        if (!user || tasks.length === 0) return;
+
+        const incompleteTasks = tasks.filter(t => !t.completed);
+        if (incompleteTasks.length === 0) return;
+
+        try {
+            const currentEnergy = await getLatestEnergyLog(user.uid);
+            const { tasks: optimized } = await getOptimizedTaskOrder(incompleteTasks, currentEnergy);
+            setOptimizedTasks(optimized.slice(0, 3)); // Top 3
+        } catch (error) {
+            console.error('Failed to optimize tasks:', error);
         }
     };
 
@@ -33,6 +51,7 @@ export default function Dashboard() {
         const unsubscribe = subscribeToTasks(user.uid, (tasks) => {
             const incompleteTasks = tasks.filter(t => !t.completed);
             setNextTask(incompleteTasks.length > 0 ? incompleteTasks[0] : null);
+            fetchOptimizedTasks(tasks);
         });
 
         return () => unsubscribe();
@@ -45,33 +64,22 @@ export default function Dashboard() {
     };
 
     return (
-        <View className="flex-1 bg-dark">
-            <LinearGradient
-                colors={['#0f172a', '#1e1b4b', '#312e81']}
-                className="absolute w-full h-full"
-            />
+        <View className="flex-1 bg-[#0a0a0f]">
             <SafeAreaView className="flex-1">
                 <ScrollView
                     refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" />
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />
                     }
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32 }}
                 >
                     {/* Header */}
-                    <View className="flex-row justify-between items-center mb-10 mt-4">
-                        <View>
-                            <Text className="text-gray-400 text-base mb-1">Welcome back,</Text>
-                            <Text className="text-4xl font-bold text-white">Aditya</Text>
-                        </View>
-                        <View className="bg-white/10 p-3 rounded-full border border-white/20">
-                            <Ionicons name="person" size={28} color="white" />
-                        </View>
+                    <View className="mb-8 mt-2">
+                        <Text className="text-3xl font-light text-white tracking-tight">Flow</Text>
                     </View>
 
                     {/* Pomodoro Timer */}
-                    <View className="mb-8">
-                        <Text className="text-2xl font-bold text-white mb-4">Focus Timer</Text>
+                    <View className="mb-6">
                         <PomodoroTimer />
                     </View>
 
@@ -84,53 +92,87 @@ export default function Dashboard() {
                     )}
 
                     {/* Stats Cards */}
-                    <View className="flex-row gap-4 mb-8">
-                        <View className="bg-white/5 p-6 rounded-3xl border border-white/10 flex-1">
-                            <View className="bg-secondary/20 w-12 h-12 rounded-full items-center justify-center mb-4">
-                                <Ionicons name="flash" size={24} color="#ec4899" />
+                    <View className="flex-row gap-3 mb-6">
+                        <View className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.05] flex-1">
+                            <View className="flex-row items-center mb-2">
+                                <View className="bg-secondary/10 w-8 h-8 rounded-lg items-center justify-center mr-2">
+                                    <Ionicons name="flash" size={16} color="#ec4899" />
+                                </View>
+                                <Text className="text-gray-500 text-[10px] uppercase tracking-wider">Energy</Text>
                             </View>
-                            <Text className="text-gray-400 text-xs mb-2 font-medium uppercase tracking-wider">Current Energy</Text>
-                            <Text className="text-2xl font-bold text-white">
+                            <Text className="text-xl font-semibold text-white">
                                 {currentEnergy ? (
                                     currentEnergy.level >= 8 ? 'High' :
                                         currentEnergy.level >= 4 ? 'Medium' : 'Low'
                                 ) : '--'}
                             </Text>
                         </View>
-                        <View className="bg-white/5 p-6 rounded-3xl border border-white/10 flex-1">
-                            <View className="bg-primary/20 w-12 h-12 rounded-full items-center justify-center mb-4">
-                                <Ionicons name="diamond" size={24} color="#6366f1" />
+                        <View className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.05] flex-1">
+                            <View className="flex-row items-center mb-2">
+                                <View className="bg-primary/10 w-8 h-8 rounded-lg items-center justify-center mr-2">
+                                    <Ionicons name="diamond" size={16} color="#6366f1" />
+                                </View>
+                                <Text className="text-gray-500 text-[10px] uppercase tracking-wider">Points</Text>
                             </View>
-                            <Text className="text-gray-400 text-xs mb-2 font-medium uppercase tracking-wider">Flow Points</Text>
-                            <Text className="text-2xl font-bold text-white">1,250</Text>
+                            <Text className="text-xl font-semibold text-white">1,250</Text>
                         </View>
                     </View>
 
-                    {/* Up Next Section */}
-                    {nextTask && (
-                        <View className="mb-4">
-                            <Text className="text-2xl font-bold text-white mb-4">Up Next</Text>
-                            <LinearGradient
-                                colors={['#1e293b', '#0f172a']}
-                                className="p-6 rounded-3xl border border-white/10"
-                            >
+                    {/* AI Recommended Tasks */}
+                    {optimizedTasks.length > 0 && (
+                        <View className="mb-6">
+                            <View className="flex-row items-center justify-between mb-3">
                                 <View className="flex-row items-center">
-                                    <View className="w-1 h-12 bg-primary rounded-full mr-4" />
+                                    <Ionicons name="sparkles" size={16} color="#6366f1" />
+                                    <Text className="text-white/90 text-sm font-medium ml-2 tracking-wide uppercase">
+                                        Recommended
+                                    </Text>
+                                </View>
+                                <TouchableOpacity onPress={() => router.push('/(tabs)/tasks')}>
+                                    <Text className="text-primary text-xs">View All</Text>
+                                </TouchableOpacity>
+                            </View>
+                            {optimizedTasks.map((task, index) => (
+                                <View
+                                    key={task.id}
+                                    className="bg-white/[0.02] p-3 rounded-xl border border-white/[0.05] mb-2"
+                                >
+                                    <View className="flex-row items-center">
+                                        <View className="bg-primary/20 rounded-md px-2 py-0.5 mr-3">
+                                            <Text className="text-primary text-[10px] font-medium">#{index + 1}</Text>
+                                        </View>
+                                        <View className="flex-1">
+                                            <Text className="text-white font-medium text-sm mb-0.5">{task.title}</Text>
+                                            <Text className="text-gray-500 text-xs">{task.estimatedDuration} min</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            ))}
+                        </View>
+                    )}
+
+                    {/* Up Next Section */}
+                    {nextTask && !optimizedTasks.length && (
+                        <View className="mb-4">
+                            <Text className="text-white/90 text-sm font-medium mb-3 tracking-wide uppercase">Up Next</Text>
+                            <View className="bg-white/[0.02] p-4 rounded-2xl border border-white/[0.05]">
+                                <View className="flex-row items-center">
+                                    <View className="w-0.5 h-10 bg-primary rounded-full mr-3" />
                                     <View className="flex-1">
-                                        <Text className="text-white font-bold text-xl mb-1">{nextTask.title}</Text>
+                                        <Text className="text-white font-medium text-base mb-1">{nextTask.title}</Text>
                                         <View className="flex-row items-center">
-                                            <Ionicons name="time-outline" size={16} color="#9CA3AF" />
-                                            <Text className="text-gray-400 font-medium ml-2">{nextTask.estimatedDuration} min</Text>
+                                            <Ionicons name="time-outline" size={12} color="#6b7280" />
+                                            <Text className="text-gray-500 text-xs ml-1">{nextTask.estimatedDuration} min</Text>
                                             <View className="ml-3 flex-row items-center">
-                                                <Ionicons name="flag-outline" size={16} color="#9CA3AF" />
-                                                <Text className="text-gray-400 font-medium ml-2">
-                                                    Priority {nextTask.priority}
+                                                <Ionicons name="flag-outline" size={12} color="#6b7280" />
+                                                <Text className="text-gray-500 text-xs ml-1">
+                                                    P{nextTask.priority}
                                                 </Text>
                                             </View>
                                         </View>
                                     </View>
                                 </View>
-                            </LinearGradient>
+                            </View>
                         </View>
                     )}
                 </ScrollView>

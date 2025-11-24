@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 
 type TimerMode = 'work' | 'shortBreak' | 'longBreak';
 
@@ -22,9 +21,9 @@ const TIMER_LABELS = {
 };
 
 const TIMER_COLORS = {
-    work: ['#6366f1', '#8b5cf6'],
-    shortBreak: ['#10b981', '#059669'],
-    longBreak: ['#ec4899', '#db2777'],
+    work: '#6366f1',
+    shortBreak: '#10b981',
+    longBreak: '#ec4899',
 };
 
 export default function PomodoroTimer({ onComplete }: PomodoroTimerProps) {
@@ -107,18 +106,18 @@ export default function PomodoroTimer({ onComplete }: PomodoroTimerProps) {
     const progress = 1 - (timeLeft / TIMER_DURATIONS[mode]);
 
     return (
-        <View className="bg-white/5 p-6 rounded-3xl border border-white/10">
+        <View className="bg-white/[0.02] p-5 rounded-2xl border border-white/[0.05]">
             {/* Mode Selector */}
-            <View className="flex-row gap-2 mb-6">
+            <View className="flex-row gap-2 mb-5">
                 {(['work', 'shortBreak', 'longBreak'] as TimerMode[]).map((m) => (
                     <TouchableOpacity
                         key={m}
                         onPress={() => switchMode(m)}
-                        className={`flex-1 py-2 px-3 rounded-xl ${mode === m ? 'bg-white/10' : 'bg-white/5'
+                        className={`flex-1 py-2 px-2 rounded-lg ${mode === m ? 'bg-white/[0.08]' : 'bg-white/[0.02]'
                             }`}
                         disabled={isRunning}
                     >
-                        <Text className={`text-center text-sm font-semibold ${mode === m ? 'text-white' : 'text-gray-400'
+                        <Text className={`text-center text-xs font-medium ${mode === m ? 'text-white' : 'text-gray-500'
                             }`}>
                             {TIMER_LABELS[m]}
                         </Text>
@@ -127,64 +126,61 @@ export default function PomodoroTimer({ onComplete }: PomodoroTimerProps) {
             </View>
 
             {/* Timer Display */}
-            <View className="items-center mb-6">
-                <View className="relative w-48 h-48 items-center justify-center mb-4">
+            <View className="items-center mb-5">
+                <View className="relative w-40 h-40 items-center justify-center mb-3">
                     {/* Progress Circle */}
-                    <View className="absolute w-full h-full rounded-full border-4 border-white/10" />
+                    <View className="absolute w-full h-full rounded-full border-4 border-white/[0.05]" />
                     <View
                         className="absolute w-full h-full rounded-full border-4"
                         style={{
-                            borderColor: TIMER_COLORS[mode][0],
+                            borderColor: TIMER_COLORS[mode],
                             transform: [{ rotate: `${progress * 360}deg` }],
                         }}
                     />
 
                     {/* Time Text */}
-                    <Text className="text-6xl font-bold text-white">
+                    <Text className="text-5xl font-semibold text-white">
                         {formatTime(timeLeft)}
                     </Text>
                 </View>
 
                 {/* Pomodoro Counter */}
                 {mode === 'work' && (
-                    <View className="flex-row items-center gap-2">
-                        <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-                        <Text className="text-gray-300 font-medium">
-                            {completedPomodoros} pomodoros completed today
+                    <View className="flex-row items-center gap-1.5">
+                        <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+                        <Text className="text-gray-500 text-xs">
+                            {completedPomodoros} completed
                         </Text>
                     </View>
                 )}
             </View>
 
             {/* Controls */}
-            <View className="flex-row gap-3">
+            <View className="flex-row gap-2 justify-center">
                 <TouchableOpacity
                     onPress={toggleTimer}
-                    className="flex-1 overflow-hidden rounded-2xl"
+                    className="rounded-xl py-3 px-6 flex-row justify-center items-center border"
+                    style={{
+                        backgroundColor: `${TIMER_COLORS[mode]}20`,
+                        borderColor: `${TIMER_COLORS[mode]}30`,
+                    }}
                 >
-                    <LinearGradient
-                        colors={TIMER_COLORS[mode]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        className="py-4 flex-row justify-center items-center"
-                    >
-                        <Ionicons
-                            name={isRunning ? 'pause' : 'play'}
-                            size={24}
-                            color="white"
-                        />
-                        <Text className="text-white font-bold text-lg ml-2">
-                            {isRunning ? 'Pause' : 'Start'}
-                        </Text>
-                    </LinearGradient>
+                    <Ionicons
+                        name={isRunning ? 'pause' : 'play'}
+                        size={18}
+                        color={TIMER_COLORS[mode]}
+                    />
+                    <Text className="font-medium text-sm ml-2" style={{ color: TIMER_COLORS[mode] }}>
+                        {isRunning ? 'Pause' : 'Start'}
+                    </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     onPress={resetTimer}
-                    className="bg-white/10 py-4 px-6 rounded-2xl"
+                    className="bg-white/[0.05] py-3 px-5 rounded-xl border border-white/[0.05]"
                     disabled={!isRunning && timeLeft === TIMER_DURATIONS[mode]}
                 >
-                    <Ionicons name="refresh" size={24} color="white" />
+                    <Ionicons name="refresh" size={18} color="#6b7280" />
                 </TouchableOpacity>
             </View>
         </View>
